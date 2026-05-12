@@ -1,10 +1,9 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
+#include <cassert>
+#include <algorithm>
 
-using namespace std;
-
-void qsort( vector<int>&v,  int begin, int end ) {
+void qsort( std::vector<int>&v,  int begin, int end ) {
     int aux, b = begin, e = end,
       pivot = v[(begin + end) / 2];
 
@@ -39,17 +38,14 @@ int main() {
     std::cin.tie(nullptr);
     int n, i;
 
-    ifstream fin ("qsort.in");
-    ofstream fout ("qsort.out");
-
-    fin >> n;
+    std::cin >> n;
     std::vector<int> a(n);
     for (int& x : a) {
-        fin >> x;
+        std::cin >> x;
     }
 
     qsort( a, 0, n - 1 );
 
-    for ( i = 0; i < n; i++ )
-        fout << a[i] << " ";
+    assert(std::ranges::is_sorted(a));
+    return 0;
 }
