@@ -1,31 +1,13 @@
 #include <vector>
 #include <random>
 #include <cstdio>
-#include <cstring>
 using namespace std;
-
-static char wbuf[1 << 24];
-static int wpos = 0;
-
-void wflush(){
-    fwrite(wbuf, 1, wpos, stdout);
-    wpos = 0;
-}
-
-void wint(int x){
-    if(wpos > (1 << 24) - 20) wflush();
-    if(x < 0){ wbuf[wpos++] = '-'; x = -x; }
-    char tmp[12]; int len = 0;
-    if(x == 0){ wbuf[wpos++] = '0'; }
-    else{ while(x > 0){ tmp[len++] = '0' + x % 10; x /= 10; } for(int i = len-1; i >= 0; i--) wbuf[wpos++] = tmp[i]; }
-    wbuf[wpos++] = '\n';
-}
 
 int main(int argc, char *argv[])
 {
-    if (argc != 4)
+    if (argc != 5)
     {
-        printf("Apeleaza cu : gen_tests <N> <seed> <type>\n");
+        printf("Apeleaza cu : gen_tests <N> <seed> <type> <output_file>\n");
         printf("Tipuri: 0=random, 1=sortat, 2=sortat_invers, 3=few_unique, 4=almost_sorted, 5=all_equal, 6=neg_poz, 7=sawtooth\n");
         return 1;
     }
@@ -33,6 +15,8 @@ int main(int argc, char *argv[])
     int n = atoi(argv[1]);
     int seed = atoi(argv[2]);
     int type = atoi(argv[3]);
+    FILE *fout = fopen(argv[4], "w");
+    if (!fout) { printf("Nu pot deschide %s\n", argv[4]); return 1; }
 
     mt19937 rng(seed);
     vector<int> a(n);
@@ -101,9 +85,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    wint(n);
-    for(int i = 0; i < n; i++) wint(a[i]);
-    wflush();
+    fprintf(fout, "%d\n", n);
+    for (int i = 0; i < n; i++)
+        fprintf(fout, "%d\n", a[i]);
 
+    fclose(fout);
     return 0;
 }

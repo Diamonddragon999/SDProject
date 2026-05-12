@@ -1,7 +1,7 @@
 $gpp = "C:\gcc\mingw64\bin\g++.exe"
 
 Write-Host "Compilez generator..."
-& $gpp -O2 -o generator.exe generator.cpp
+& $gpp -O2 -static -o generator.exe generator.cpp
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Eroare la compilarea generatorului!"
     exit 1
@@ -14,15 +14,14 @@ $tipuri = @("random", "sortat", "sortat_invers", "few_unique", "almost_sorted", 
 
 Write-Host "Generez teste small (N=20000)..."
 for ($t = 0; $t -lt $tipuri.Length; $t++) {
-    .\generator.exe 20000 $seed $t > "tests\small_$($tipuri[$t]).in"
+    & .\generator.exe 20000 $seed $t "tests\small_$($tipuri[$t]).in"
 }
 
 Write-Host "Generez teste big (N=10000000)..."
 $procs = @()
 for ($t = 0; $t -lt $tipuri.Length; $t++) {
     $procs += Start-Process -FilePath ".\generator.exe" `
-        -ArgumentList "10000000 $seed $t" `
-        -RedirectStandardOutput "tests\big_$($tipuri[$t]).in" `
+        -ArgumentList "10000000 $seed $t tests\big_$($tipuri[$t]).in" `
         -NoNewWindow -PassThru
 }
 $procs | ForEach-Object { $_.WaitForExit() }
@@ -33,7 +32,7 @@ Write-Host "Compilez algoritmi..."
 $cpps = Get-ChildItem "algorithms\*.cpp"
 foreach ($f in $cpps) {
     $name = $f.BaseName
-    & $gpp -std=c++20 -O2 -o "bin\$name.exe" $f.FullName
+    & $gpp -std=c++20 -O2 -static -o "bin\$name.exe" $f.FullName
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  FAIL: $($f.Name)"
     } else {
@@ -62,17 +61,29 @@ foreach ($exe in $exes) {
         $exePath = $exe.FullName
         $testPath = $tin.FullName
 
-        $proc = $null
-        $ms = (Measure-Command {
-            $proc = Start-Process -FilePath $exePath `
-                -RedirectStandardInput $testPath `
-                -NoNewWindow -Wait -PassThru
-        }).TotalMilliseconds
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $exePath
+        $psi.UseShellExecute = $false
+        $psi.RedirectStandardInput = $true
+        $psi.CreateNoWindow = $true
 
-        if ($proc.ExitCode -ne 0) {
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $stream = [System.IO.File]::OpenRead($testPath)
+        $stream.CopyTo($proc.StandardInput.BaseStream)
+        $stream.Close()
+        $proc.StandardInput.Close()
+
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $finished = $proc.WaitForExit(60000)
+        $sw.Stop()
+
+        if (-not $finished) {
+            $proc.Kill()
+            Write-Host ("{0,-25} {1,-22} {2,10}" -f $name, $testName, "TIMEOUT")
+        } elseif ($proc.ExitCode -ne 0) {
             Write-Host ("{0,-25} {1,-22} {2,10}" -f $name, $testName, "FAIL")
         } else {
-            Write-Host ("{0,-25} {1,-22} {2,10:F1}" -f $name, $testName, $ms)
+            Write-Host ("{0,-25} {1,-22} {2,10:F1}" -f $name, $testName, $sw.Elapsed.TotalMilliseconds)
         }
     }
 }
