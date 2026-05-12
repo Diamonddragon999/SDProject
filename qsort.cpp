@@ -32,6 +32,10 @@ void qsort( std::vector<int>&v,  int begin, int end ) {
     if ( e + 1 < end )
         qsort( v, e + 1, end );
 }
+void custom_sort( std::vector<int>& v ){
+    if( (int)v.size() > 1 )
+        qsort(v,0,(int)v.size()-1 );
+}
 
 int main() {
     std::ios::sync_with_stdio(false);
@@ -44,7 +48,7 @@ int main() {
         std::cin >> x;
     }
 
-    qsort( a, 0, n - 1 );
+    custom_sort( a );
 
     assert(std::ranges::is_sorted(a));
     return 0;
