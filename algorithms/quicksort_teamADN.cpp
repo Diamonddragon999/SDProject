@@ -3,30 +3,8 @@
 #include <cassert>
 #include <algorithm>
 
-int* medianofthree(int* a, int* b, int* c)
-{
-    if (*a < *b && *b < *c)
-        return (b);
-
-    if (*a < *c && *c <= *b)
-        return (c);
-
-    if (*b <= *a && *a < *c)
-        return (a);
-
-    if (*b < *c && *c <= *a)
-        return (c);
-
-    if (*c <= *a && *a < *b)
-        return (a);
-
-    if (*c <= *b && *b <= *a)
-        return (b);
-}
-
 void qsort( std::vector<int>&v,  int begin, int end ) {
-    int aux, b = begin, e = end;
-    int* pivot = medianofthree(begin, begin + (end - begin) / 2, end);
+    int aux, b = begin, e = end, pivot = v[(begin + end) / 2];
 
     while ( v[b] < pivot )
         b++;
